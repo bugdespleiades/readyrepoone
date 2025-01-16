@@ -148,7 +148,6 @@ resource "aws_instance" "private" {
   vpc_security_group_ids = [aws_security_group.private_sg.id]
   key_name               = data.aws_key_pair.terraform1.key_name
 }
-
 # # Création d'un VPC
 # resource "aws_vpc" "terraform1" {
 #   cidr_block = var.vpc_cidr_block
