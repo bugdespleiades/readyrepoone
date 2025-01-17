@@ -16,4 +16,9 @@ terraform {
 provider "aws" {
   # Configuration options
   region = "us-east-1"
+  default_tags {
+    tags ={
+      env = var.env
+    }
+  }
 }

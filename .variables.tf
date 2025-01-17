@@ -41,3 +41,8 @@ variable "security_group_name" {
   default     = "terraform1"
   description = "Nom du groupe de sécurité"
 }
+
+variable "env" {
+  type = string
+  description = "variable environnement"
+}

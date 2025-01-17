@@ -2,11 +2,13 @@ pipeline {
     agent any
 
     parameters {
+        choice(name: "env", choices :['dev', 'prod'], description: 'environnement de deploeiemnt dev ou prod')
         booleanParam(name: 'DESTROY', defaultValue: false, description: 'Détruire infra apres déploiement?')
     }
 
     environment {
         AWS_DEFAULT_REGION = 'us-east-1'
+        TF_VAR_env = "${params.env}"
     }
 
     stages {
@@ -17,7 +19,11 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        terraform init
+                        terraform init \
+                            -backend-config="bucket=pcl-terraform-state-bucket-eu-west-1" \
+                            -backend-config="key=terraform/${TF_VAR_env}/state" \
+                            -backend-config="region=$AWS_DEFAULT_REGION" \
+                            -backend-config="dynamodb_table=pcl-terraform-lock-table-eu-west-1-${TF_VAR_env}"
                         terraform plan
                     '''
                 }
@@ -43,7 +49,11 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        terraform init
+                        terraform init \
+                            -backend-config="bucket=pcl-terraform-state-bucket-eu-west-1" \
+                            -backend-config="key=terraform/${TF_VAR_env}/state" \
+                            -backend-config="region=$AWS_DEFAULT_REGION" \
+                            -backend-config="dynamodb_table=pcl-terraform-lock-table-eu-west-1-${TF_VAR_env}"
                         terraform apply -auto-approve
                     '''
                 }
@@ -57,7 +67,11 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        terraform init
+                        terraform init \
+                            -backend-config="bucket=pcl-terraform-state-bucket-eu-west-1" \
+                            -backend-config="key=terraform/${TF_VAR_env}/state" \
+                            -backend-config="region=$AWS_DEFAULT_REGION" \
+                            -backend-config="dynamodb_table=pcl-terraform-lock-table-eu-west-1-${TF_VAR_env}"
                         terraform destroy -auto-approve
                     '''
                 }
