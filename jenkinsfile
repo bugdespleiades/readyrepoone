@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     parameters {
-        booleanParam(name: 'DESTROY', defaultValue: false, description: 'Détruire l\'infrastructure après déploiement?')
+        booleanParam(name: 'DESTROY', defaultValue: false, description: 'Détruire infra apres déploiement?')
     }
 
     environment {
@@ -11,6 +11,9 @@ pipeline {
 
     stages {
         stage('iac:terraform plan') {
+            when {
+                expression { params.DESTROY == false }
+            
             steps {
                 script {
                     sh '''
@@ -20,11 +23,15 @@ pipeline {
                 }
             }
         }
+        }
 
         stage('confirm:deploy') {
+            when {
+                expression { params.DESTROY == false }
             steps {
                 input(id: 'confirm', message: """
                     You choose to deploy:
+                    }
                     
 branch: ${env.GIT_BRANCH}
                   Do you confirm the deployment""")
@@ -32,6 +39,8 @@ branch: ${env.GIT_BRANCH}
         }
 
         stage('iac:terraform apply') {
+            when {
+                expression { params.DESTROY == false }
             steps {
                 script {
                     sh '''
@@ -41,8 +50,11 @@ branch: ${env.GIT_BRANCH}
                 }
             }
         }
+        }
 
         stage('iac:terraform destroy') {
+            when {
+                expression { params.DESTROY == false }
             when {
                 expression { params.DESTROY }
             }
@@ -56,7 +68,7 @@ branch: ${env.GIT_BRANCH}
             }
         }
     }
-
+        }
     post { 
         always { 
             cleanWs()
