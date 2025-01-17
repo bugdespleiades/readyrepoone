@@ -1,11 +1,15 @@
 pipeline {
     agent any
+    // options {
+    //     // options
+    // }
 
-    parameters {
-        booleanParam(name: 'DESTROY', defaultValue: false, description: 'Détruire l\'infrastructure après déploiement?')
-    }
+    // parameters {
+    //     // Parameters
+    // }
 
     environment {
+        // environment variables
         AWS_DEFAULT_REGION = 'us-east-1'
     }
 
@@ -27,9 +31,7 @@ pipeline {
                     You choose to deploy:
                     
 branch: ${env.GIT_BRANCH}
-                  Do you confirm the deployment""")
-            }
-        }
+                  Do you confirm the deployment""")}}
 
         stage('iac:terraform apply') {
             steps {
@@ -41,20 +43,6 @@ branch: ${env.GIT_BRANCH}
                 }
             }
         }
-
-        stage('iac:terraform destroy') {
-            when {
-                expression { params.DESTROY }
-            }
-            steps {
-                script {
-                    sh '''
-                        terraform init
-                        terraform destroy -auto-approve
-                    '''
-                }
-            }
-        }
     }
 
     post { 
@@ -62,4 +50,5 @@ branch: ${env.GIT_BRANCH}
             cleanWs()
         }
     }
+
 }
