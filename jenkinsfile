@@ -1,9 +1,9 @@
 pipeline {
-//    agent any
+    agent any
     options {
-        // options
-        ansiColor('xterm')
-    }
+         // options
+         ansiColor('xterm')
+     }
 
     // parameters {
     //     // Parameters
