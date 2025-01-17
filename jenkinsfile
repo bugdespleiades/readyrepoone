@@ -13,7 +13,7 @@ pipeline {
         stage('iac:terraform plan') {
             when {
                 expression { params.DESTROY == false }
-            
+            }
             steps {
                 script {
                     sh '''
@@ -23,24 +23,23 @@ pipeline {
                 }
             }
         }
-        }
 
         stage('confirm:deploy') {
             when {
                 expression { params.DESTROY == false }
+            }
             steps {
                 input(id: 'confirm', message: """
                     You choose to deploy:
-                    }
-                    
-branch: ${env.GIT_BRANCH}
-                  Do you confirm the deployment""")
+                    branch: ${env.GIT_BRANCH}
+                    Do you confirm the deployment""")
             }
         }
 
         stage('iac:terraform apply') {
             when {
                 expression { params.DESTROY == false }
+            }
             steps {
                 script {
                     sh '''
@@ -50,13 +49,10 @@ branch: ${env.GIT_BRANCH}
                 }
             }
         }
-        }
 
         stage('iac:terraform destroy') {
             when {
-                expression { params.DESTROY == false }
-            when {
-                expression { params.DESTROY }
+                expression { params.DESTROY == true }
             }
             steps {
                 script {
@@ -68,9 +64,9 @@ branch: ${env.GIT_BRANCH}
             }
         }
     }
-        }
-    post { 
-        always { 
+
+    post {
+        always {
             cleanWs()
         }
     }
