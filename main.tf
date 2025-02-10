@@ -66,7 +66,7 @@ resource "aws_security_group" "private_sg" {
   }
 }
  data "aws_key_pair" "terraform1" {
-  key_name           = "labuser2"
+  key_name           = "keyjenkins"
   include_public_key = false
 }
 # Créer une table de routage pour le sous-réseau publique
