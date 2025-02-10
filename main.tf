@@ -4,7 +4,6 @@ module "terraformaws" {
 #  vpc_cidr_block      = "172.20.0.0/16"
 #  subnet_cidr_block   = "172.20.0.0/24"
 #  availability_zone  = "us-east-1a"
-  aws_vpc             = 
   bastion_sg_name     = "bastion_sg"
   aws_key_pair        = "keyjenkins"
 #  ami                 = "ami-0c94855ba95c71c99"
