@@ -1,7 +1,5 @@
 
-variable "aws_vpc" {
-  type        = string
-}
+
 variable "vpc_cidr_block" {
   type        = string
   default     = "172.20.0.0/16"

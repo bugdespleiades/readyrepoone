@@ -1,16 +1,18 @@
+
+
+# Créer une passerelle Internet
+resource "aws_internet_gateway" "gw" {
+  vpc_id = aws_vpc.main.id
+}
+
 # Créer un VPC
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr_block
 }
 
-# Créer une passerelle Internet
-resource "aws_internet_gateway" "gw" {
-  vpc_id = var.aws_vpc.main.id
-}
-
 # Créer une subnet publique
 resource "aws_subnet" "public" {
-  vpc_id            = var.aws_vpc.main.id
+  vpc_id            = aws_vpc.main.id
   cidr_block        = var.subnet_cidr_block
   availability_zone = var.availability_zone
   map_public_ip_on_launch = true
@@ -18,7 +20,7 @@ resource "aws_subnet" "public" {
 
 # Créer une subnet privée
 resource "aws_subnet" "private" {
-  vpc_id            = var.aws_vpc.main.id
+  vpc_id            = aws_vpc.main.id
   cidr_block        = var.subnet_cidr_block
   availability_zone = var.availability_zone
 }
