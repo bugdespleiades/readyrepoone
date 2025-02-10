@@ -54,8 +54,3 @@ variable "ami" {
   default     = "ami-0c94855ba95c71c99"
   description = "ID de l'AMI Debian 12"
 }
-variable "instance_type" {
-  type        = string
-  default     = "t2.micro"
-  description = "type d'insrtance ec2"
-}
