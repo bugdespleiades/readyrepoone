@@ -1,7 +1,6 @@
 
 variable "aws_vpc" {
   type        = string
-  description = "nom du vpc"
 }
 variable "vpc_cidr_block" {
   type        = string
