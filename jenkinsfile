@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    options {
+        ansiColor('xterm')
+    }
 
     parameters {
         booleanParam(name: 'DESTROY', defaultValue: false, description: 'Détruire infra apres déploiement?')

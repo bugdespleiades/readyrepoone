@@ -1,12 +1,11 @@
+# Créer un VPC
+resource "aws_vpc" "main" {
+  cidr_block = var.vpc_cidr_block
+}
 
 # Créer une passerelle Internet
 resource "aws_internet_gateway" "gw" {
   vpc_id = var.aws_vpc.main.id
-}
-
-# Créer un VPC
-resource "aws_vpc" "main" {
-  cidr_block = var.vpc_cidr_block
 }
 
 # Créer une subnet publique
