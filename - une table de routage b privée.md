@@ -1,0 +1,5 @@
+- une table de routage b privée
+- Associer la table avec un sous-reseau privé
+- Une nat gateway
+- Creation route sur la table de routage pour sortir sur internet en passant par la nat gateway
+- Modifier la règle du securty group du serveur applictif pour qu'il points vers le security group depuis le bastion

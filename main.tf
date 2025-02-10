@@ -1,12 +1,21 @@
-
 # Créer une passerelle Internet
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name        = "igw-${var.env}"
+    Environment = var.env
+  }
 }
 
 # Créer un VPC
 resource "aws_vpc" "main" {
   cidr_block = "172.16.0.0/16"
+
+  tags = {
+    Name        = "main-vpc-${var.env}"
+    Environment = var.env
+  }
 }
 
 # Créer une subnet publique
@@ -15,6 +24,11 @@ resource "aws_subnet" "public" {
   cidr_block        = "172.16.1.0/24"
   availability_zone = "us-east-1a"
   map_public_ip_on_launch = true
+
+  tags = {
+    Name        = "public-subnet-${var.env}"
+    Environment = var.env
+  }
 }
 
 # Créer une subnet privée
@@ -22,16 +36,21 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "172.16.2.0/24"
   availability_zone = "us-east-1a"
+
+  tags = {
+    Name        = "private-subnet-${var.env}"
+    Environment = var.env
+  }
 }
 
 # Créer un groupe de sécurité pour le bastion
 resource "aws_security_group" "bastion_sg" {
-  name        = "bastion_sg"
+  name        = "bastion-sg-${var.env}"
   description = "sg_bastion"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    from_port   =22
+    from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
@@ -43,11 +62,16 @@ resource "aws_security_group" "bastion_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name        = "bastion-sg-${var.env}"
+    Environment = var.env
+  }
 }
 
 # Créer un groupe de sécurité pour l'instance privée
 resource "aws_security_group" "private_sg" {
-  name        = "private_sg"
+  name        = "private-sg-${var.env}"
   description = "sg_private_instance"
   vpc_id      = aws_vpc.main.id
 
@@ -64,11 +88,18 @@ resource "aws_security_group" "private_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name        = "private-sg-${var.env}"
+    Environment = var.env
+  }
 }
- data "aws_key_pair" "terraform1" {
-  key_name           = "labuser2"
+
+data "aws_key_pair" "terraform1" {
+  key_name           = "keyjenkins"
   include_public_key = false
 }
+
 # Créer une table de routage pour le sous-réseau publique
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -79,19 +110,163 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "public"
+    Name        = "public-rt-${var.env}"
+    Environment = var.env
   }
 }
+
 # Créer une table de routage pour le sous-réseau privé
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  # Ne pas ajouter de route ici, on la créera séparément
   tags = {
-    Name = "private"
+    Name        = "private-rt-${var.env}"
+    Environment = var.env
   }
 }
-# resource "aws_route_table" "private" {
+
+# Associer la table de routage à la sous-réseau publique
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+# Associer la table de routage à la sous-réseau privé
+resource "aws_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
+}
+
+# Création d'une EIP
+resource "aws_eip" "private" {
+  vpc = true
+
+  tags = {
+    Name        = "eip-${var.env}"
+    Environment = var.env
+  }
+}
+
+# Créer une passerelle nat
+resource "aws_nat_gateway" "private" {
+  allocation_id = aws_eip.private.id 
+#... (reste du code)
+
+resource "aws_nat_gateway" "private" {
+  allocation_id = aws_eip.private.id
+  subnet_id     = aws_subnet.public.id
+
+  tags = {
+    Name        = "nat-gw-${var.env}"
+    Environment = var.env
+  }
+}
+
+resource "aws_route" "private_nat" {
+  route_table_id         = aws_route_table.private.id
+  nat_gateway_id         = aws_nat_gateway.private.id
+  destination_cidr_block = "0.0.0.0/0"
+}
+
+# Créer une instance EC2 pour le bastion
+resource "aws_instance" "bastion" {
+  ami           = "ami-0c94855ba95c71c99"
+  instance_type = "t2.micro"
+  subnet_id     = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.bastion_sg.id]
+  key_name               = data.aws_key_pair.terraform1.key_name
+
+  tags = {
+    Name        = "bastion-${var.env}"
+    Environment = var.env
+  }
+}
+
+# Créer une instance EC2 privée
+resource "aws_instance" "private" {
+  ami           = "ami-0c94855ba95c71c99"
+  instance_type = "t2.micro"
+  subnet_id     = aws_subnet.private.id
+  vpc_security_group_ids = [aws_security_group.private_sg.id]
+  key_name               = data.aws_key_pair.terraform1.key_name
+
+  tags = {
+    Name        = "private-${var.env}"
+    Environment = var.env
+  }
+}
+# # Créer une passerelle Internet
+# resource "aws_internet_gateway" "gw" {
+#   vpc_id = aws_vpc.main.id
+# }
+
+# # Créer un VPC
+# resource "aws_vpc" "main" {
+#   cidr_block = "172.16.0.0/16"
+# }
+
+# # Créer une subnet publique
+# resource "aws_subnet" "public" {
+#   vpc_id            = aws_vpc.main.id
+#   cidr_block        = "172.16.1.0/24"
+#   availability_zone = "us-east-1a"
+#   map_public_ip_on_launch = true
+# }
+
+# # Créer une subnet privée
+# resource "aws_subnet" "private" {
+#   vpc_id            = aws_vpc.main.id
+#   cidr_block        = "172.16.2.0/24"
+#   availability_zone = "us-east-1a"
+# }
+
+# # Créer un groupe de sécurité pour le bastion
+# resource "aws_security_group" "bastion_sg" {
+#   name        = "bastion_sg"
+#   description = "sg_bastion"
+#   vpc_id      = aws_vpc.main.id
+
+#   ingress {
+#     from_port   =22
+#     to_port     = 22
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# }
+
+# # Créer un groupe de sécurité pour l'instance privée
+# resource "aws_security_group" "private_sg" {
+#   name        = "private_sg"
+#   description = "sg_private_instance"
+#   vpc_id      = aws_vpc.main.id
+
+#   ingress {
+#     from_port   = 22
+#     to_port     = 22
+#     protocol    = "tcp"
+#     cidr_blocks = [aws_subnet.public.cidr_block]
+#   }
+
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# }
+#  data "aws_key_pair" "terraform1" {
+#   key_name           = "labuser2"
+#   include_public_key = false
+# }
+# # Créer une table de routage pour le sous-réseau publique
+# resource "aws_route_table" "public" {
 #   vpc_id = aws_vpc.main.id
 
 #   route {
@@ -103,51 +278,72 @@ resource "aws_route_table" "private" {
 #     Name = "public"
 #   }
 # }
-# Associer la table de routage à la sous-réseau publique
-resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public.id
-}
-# Associer la table de routage à la sous-réseau privé
-resource "aws_route_table_association" "private" {
-  subnet_id      = aws_subnet.private.id
-  route_table_id = aws_route_table.private.id
-}
-# Création d'une EIP
-resource "aws_eip" "private" {
-  vpc = true
-}
-# Créer une passerelle nat
-resource "aws_nat_gateway" "private" {
-  allocation_id = aws_eip.private.id
-  subnet_id     = aws_subnet.public.id
+# # Créer une table de routage pour le sous-réseau privé
+# resource "aws_route_table" "private" {
+#   vpc_id = aws_vpc.main.id
 
-  tags = {
-    Name = "gw NAT"
-  }
-}
-resource "aws_route" "private_nat" {
-  route_table_id         = aws_route_table.private.id
-  nat_gateway_id         = aws_nat_gateway.private.id
-  destination_cidr_block = "0.0.0.0/0"
-}
-# Créer une instance EC2 pour le bastion
-resource "aws_instance" "bastion" {
-  ami           = "ami-0c94855ba95c71c99"
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.bastion_sg.id]
-  key_name               = data.aws_key_pair.terraform1.key_name
-}
+#   # Ne pas ajouter de route ici, on la créera séparément
+#   tags = {
+#     Name = "private"
+#   }
+# }
+# # resource "aws_route_table" "private" {
+# #   vpc_id = aws_vpc.main.id
 
-# Créer une instance EC2 privée
-resource "aws_instance" "private" {
-  ami           = "ami-0c94855ba95c71c99"
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.private.id
-  vpc_security_group_ids = [aws_security_group.private_sg.id]
-  key_name               = data.aws_key_pair.terraform1.key_name
-}
+# #   route {
+# #     cidr_block = "0.0.0.0/0"
+# #     gateway_id = aws_internet_gateway.gw.id
+# #   }
+
+# #   tags = {
+# #     Name = "public"
+# #   }
+# # }
+# # Associer la table de routage à la sous-réseau publique
+# resource "aws_route_table_association" "public" {
+#   subnet_id      = aws_subnet.public.id
+#   route_table_id = aws_route_table.public.id
+# }
+# # Associer la table de routage à la sous-réseau privé
+# resource "aws_route_table_association" "private" {
+#   subnet_id      = aws_subnet.private.id
+#   route_table_id = aws_route_table.private.id
+# }
+# # Création d'une EIP
+# resource "aws_eip" "private" {
+#   vpc = true
+# }
+# # Créer une passerelle nat
+# resource "aws_nat_gateway" "private" {
+#   allocation_id = aws_eip.private.id
+#   subnet_id     = aws_subnet.public.id
+
+#   tags = {
+#     Name = "gw NAT"
+#   }
+# }
+# resource "aws_route" "private_nat" {
+#   route_table_id         = aws_route_table.private.id
+#   nat_gateway_id         = aws_nat_gateway.private.id
+#   destination_cidr_block = "0.0.0.0/0"
+# }
+# # Créer une instance EC2 pour le bastion
+# resource "aws_instance" "bastion" {
+#   ami           = "ami-0c94855ba95c71c99"
+#   instance_type = "t2.micro"
+#   subnet_id     = aws_subnet.public.id
+#   vpc_security_group_ids = [aws_security_group.bastion_sg.id]
+#   key_name               = data.aws_key_pair.terraform1.key_name
+# }
+
+# # Créer une instance EC2 privée
+# resource "aws_instance" "private" {
+#   ami           = "ami-0c94855ba95c71c99"
+#   instance_type = "t2.micro"
+#   subnet_id     = aws_subnet.private.id
+#   vpc_security_group_ids = [aws_security_group.private_sg.id]
+#   key_name               = data.aws_key_pair.terraform1.key_name
+# }
 # # Création d'un VPC
 # resource "aws_vpc" "terraform1" {
 #   cidr_block = var.vpc_cidr_block
